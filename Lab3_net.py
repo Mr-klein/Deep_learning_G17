@@ -14,6 +14,8 @@ train_path = 'SIGN/sign_mnist_train.csv'  #Path to training csv
 test_path = 'SIGN/sign_mnist_test.csv'    #Path to test csv
 N_classes = 26                            #Number of classes
 
+batch = 8               # batch size
+ep = 10                  # number of epochs
 
 def imshow(img):
     npimg = img.numpy()
@@ -45,33 +47,46 @@ class SIGN(torch.utils.data.Dataset):
 # -- Create Data loaders for training and test data
 transform = transforms.Compose([transforms.ToTensor()])
 trainset = SIGN(train_path,28,28,transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch,
                                           shuffle=True, num_workers=1)
 testset = SIGN(test_path,28,28,transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=4,
-                                         shuffle=False, num_workers=1)
+testloader = torch.utils.data.DataLoader(testset, batch_size=batch,
+                                         shuffle=True, num_workers=1)
 # Define classes
+# J and Z are not defined as they require movement
 classes = ('A', 'B', 'C', 'D',
-           'E', 'F', 'G', 'H', 'I',
-            'J','K','L','M','N','O',
-            'P','Q','R','S','T','U','V','W','X','Y','Z')
+           'E', 'F', 'G', 'H',
+           'I', 'J', 'K', 'L', 
+           'M', 'N', 'O', 'P',
+           'Q', 'R', 'S', 'T',
+           'U', 'V', 'W', 'X',
+           'Y', 'Z')
 
 # Define neural network
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 6, 3, padding=1)
+        # Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, 
+        #        dilation=1, groups=1, bias=True, padding_mode='zeros')
+        self.conv1 = nn.Conv2d(1, 12, 3, padding=1)
+        self.conv2 = nn.Conv2d(12, 24, 3, padding=1)
+        # MaxPool2d(kernel_size, stride=None, padding=0, dilation=1, 
+        #           return_indices=False, ceil_mode=False)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 3, padding=1)
+        self.conv3 = nn.Conv2d(24,48, 3, padding=1)
+        self.conv4 = nn.Conv2d(48,96, 3, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(16 * 7 * 7, 120)
+        # Linear(in_features, out_features, bias=True)
+        self.fc1 = nn.Linear(96 * 7 * 7, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 26)
+        self.fc3 = nn.Linear(84, N_classes)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
+        x = F.relu(self.conv1(x))
         x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 7 * 7)
+        x = F.relu(self.conv3(x))
+        x = self.pool(F.relu(self.conv4(x)))
+        x = x.view(-1, 96 * 7 * 7)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -82,19 +97,17 @@ class Net(nn.Module):
 
 # get some random training images
 if __name__ == '__main__':
-    dataiter = iter(trainloader)
-    print("a")
-    images, labels = dataiter.next()
-    print("b")
-
-    # show images
-    imshow(torchvision.utils.make_grid(images))
-    # print labels
-    print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
-
+#    dataiter = iter(trainloader)
+##    print("a")
+#    images, labels = dataiter.next()
+##    print("b")
+#
+#    # show images
+#    imshow(torchvision.utils.make_grid(images))
+#    # print labels
+#    print(' '.join('%5s' % classes[labels[j]] for j in range(batch)))
 
     use_gpu = torch.cuda.is_available()
-
 
     net = Net()
 
@@ -104,11 +117,10 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-
     # ------------ Main training loop --------
     # ----------------------------------------
 
-    for epoch in range(2):  # loop over the dataset multiple times
+    for epoch in range(ep):  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             # get the inputs
@@ -128,26 +140,24 @@ if __name__ == '__main__':
             # print statistics
             running_loss += loss.item()
             if i % 2000 == 1999:    # print every 2000 mini-batches
-                print('[%d, %5d] loss: %.3f' %
-                      (epoch + 1, i + 1, running_loss / 2000))
+                print('[%d, %5d] loss: %.3f' %(epoch + 1, i + 1, running_loss))
                 running_loss = 0.0
 
     print('Finished Training')
 
 
-    dataiter = iter(testloader)
-    images, labels = dataiter.next()
-
-    # print images
-    imshow(torchvision.utils.make_grid(images))
-    print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(4)))
-
-    outputs = net(images)
-
-    _, predicted = torch.max(outputs, 1)
-
-    print('Predicted: ', ' '.join('%5s' % classes[predicted[j]]
-                                  for j in range(4)))
+#    dataiter = iter(testloader)
+#    images, labels = dataiter.next()
+#
+#    # print images
+#    imshow(torchvision.utils.make_grid(images))
+#    print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(batch)))
+#
+#    outputs = net(images)
+#
+#    _, predicted = torch.max(outputs, 1)
+#
+#    print('Predicted: ', ' '.join('%5s' % classes[predicted[j]] for j in range(batch)))
 
    # Calculate the percentage of correct predictions
     correct = 0
@@ -160,8 +170,7 @@ if __name__ == '__main__':
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-    print('Accuracy of the network on the test images: %d %%' % (
-        100 * correct / total))
+    print('Accuracy of the network on the test images: %d %%' % (100 * correct / total))
 
     class_correct = list(0. for i in range(N_classes))
     class_total = list(0. for i in range(N_classes))
