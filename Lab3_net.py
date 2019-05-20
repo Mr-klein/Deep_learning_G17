@@ -9,22 +9,20 @@ import torch.optim as optim
 import pandas as pd
 from PIL import Image
 
-# ---- Parameters ----
+#%% ---- Parameters ----
 train_path = 'SIGN/sign_mnist_train.csv'  #Path to training csv
 test_path = 'SIGN/sign_mnist_test.csv'    #Path to test csv
 N_classes = 26                            #Number of classes
 
-batch = 8               # batch size
-ep = 10                  # number of epochs
+batch = 4               # batch size
+ep = 1                  # number of epochs
 
 def imshow(img):
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.show()
 
-
-# ---- Subclass for sign language dataset to use with Dataset and Dataloader
-# pytorch classes
+#%% ---- Subclass for sign language dataset to use with Dataset and Dataloader
 class SIGN(torch.utils.data.Dataset):
     def __init__(self,csv_file,height,width, transforms=None):
         self.data = pd.read_csv(csv_file)
@@ -44,7 +42,7 @@ class SIGN(torch.utils.data.Dataset):
     def __len__(self):
        return len(self.data.index)
 
-# -- Create Data loaders for training and test data
+#%% -- Create Data loaders for training and test data
 transform = transforms.Compose([transforms.ToTensor()])
 trainset = SIGN(train_path,28,28,transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch,
@@ -52,7 +50,8 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch,
 testset = SIGN(test_path,28,28,transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=batch,
                                          shuffle=True, num_workers=1)
-# Define classes
+
+#%% Define classes
 # J and Z are not defined as they require movement
 classes = ('A', 'B', 'C', 'D',
            'E', 'F', 'G', 'H',
@@ -62,7 +61,7 @@ classes = ('A', 'B', 'C', 'D',
            'U', 'V', 'W', 'X',
            'Y', 'Z')
 
-# Define neural network
+#%% Define neural network
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -92,15 +91,13 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
-# ---------- functions to show an image -------------
-#----------------------------------------------------
-
-# get some random training images
+#%% Training and Testing network
 if __name__ == '__main__':
+    
 #    dataiter = iter(trainloader)
-##    print("a")
+#    print("a")
 #    images, labels = dataiter.next()
-##    print("b")
+#    print("b")
 #
 #    # show images
 #    imshow(torchvision.utils.make_grid(images))
@@ -117,9 +114,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    # ------------ Main training loop --------
-    # ----------------------------------------
-
+    #%% Train network
     for epoch in range(ep):  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
@@ -144,7 +139,16 @@ if __name__ == '__main__':
                 running_loss = 0.0
 
     print('Finished Training')
-
+    
+    # save model
+    print('Saving Model Parameters...')
+    torch.save(net.state_dict(), 'model_weights.pth')
+    print('done')
+    
+    # load model
+#    net = Net()
+#    net.load_state_dict(torch.load('model_weights.pth'))
+#    net.eval()
 
 #    dataiter = iter(testloader)
 #    images, labels = dataiter.next()
@@ -159,7 +163,9 @@ if __name__ == '__main__':
 #
 #    print('Predicted: ', ' '.join('%5s' % classes[predicted[j]] for j in range(batch)))
 
-   # Calculate the percentage of correct predictions
+    #%% Test network
+    # Calculate the percentage of correct predictions
+    print('Start testing overall')
     correct = 0
     total = 0
     with torch.no_grad():
@@ -171,7 +177,8 @@ if __name__ == '__main__':
             correct += (predicted == labels).sum().item()
 
     print('Accuracy of the network on the test images: %d %%' % (100 * correct / total))
-
+    
+    print('Start testing per class')
     class_correct = list(0. for i in range(N_classes))
     class_total = list(0. for i in range(N_classes))
     with torch.no_grad():
