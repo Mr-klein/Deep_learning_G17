@@ -21,8 +21,8 @@ from PIL import Image
 train_path = 'SIGN/sign_mnist_train.csv'  #Path to training csv
 N_classes = 26                            #Number of classes
 
-batch = 4               # batch size
-ep = 1                  # number of epochs
+batch = 8               # batch size
+ep = 10                 # number of epochs
 
 #%% define dataloader
 class SIGN(torch.utils.data.Dataset):
@@ -98,6 +98,10 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
     
+    # save loss curve
+    from tensorboardX import SummaryWriter
+    writer = SummaryWriter('runs')
+    
     for epoch in range(ep):  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
@@ -117,11 +121,15 @@ if __name__ == '__main__':
 
             # print statistics
             running_loss += loss.item()
-            if i % 2000 == 1999:    # print every 2000 mini-batches
+            if i % 100 == 99:    # print every 100 mini-batches
                 print('[%d, %5d] loss: %.3f' %(epoch + 1, i + 1, running_loss))
                 running_loss = 0.0
+                niter = epoch * len(trainloader) + i
+                writer.add_scalar('Train/loss',loss.item(),niter)
 
     print('Finished Training')
+    writer.export_scalars_to_json('./all_Scalars.json')
+    writer.close()
     
     # save model
     print('Saving Model Parameters...')
