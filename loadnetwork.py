@@ -46,7 +46,7 @@ class SIGN(torch.utils.data.Dataset):
 transform = transforms.Compose([transforms.ToTensor()])
 testset = SIGN(test_path,28,28,transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=batch,
-                                         shuffle=True, num_workers=1)
+                                         shuffle=False, num_workers=1)
 
 #%% define classes
 classes = ('A', 'B', 'C', 'D',
