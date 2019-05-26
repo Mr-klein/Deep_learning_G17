@@ -16,11 +16,11 @@ import pandas as pd
 from PIL import Image
 
 #%% define parameters
-param_path = 'model_weights.pth'     # path to model param
+param_path = 'model_weights_google.pth'     # path to model param
 test_path = 'SIGN/sign_mnist_test.csv'  # path to test csv
 
 N_classes = 26          # number of classes
-batch = 8               # batch size
+batch = 16               # batch size
 
 #%% define dataloader
 class SIGN(torch.utils.data.Dataset):
@@ -93,6 +93,7 @@ if __name__ == '__main__':
     net = Net()
     if use_gpu:
         net = net.cuda()
+        device = torch.device("cuda")
     net.load_state_dict(torch.load(param_path))
     net.eval()
     
@@ -102,10 +103,10 @@ if __name__ == '__main__':
     with torch.no_grad():
         for data in testloader:
             images, labels = data
-            outputs = net(images)
+            outputs = net(images.to(device))
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            correct += (predicted == labels.to(device)).sum().item()
 
     print('Accuracy of the network on the test images: %d %%' % (100 * correct / total))
     
@@ -115,9 +116,9 @@ if __name__ == '__main__':
     with torch.no_grad():
         for data in testloader:
             images, labels = data
-            outputs = net(images)
+            outputs = net(images.to(device))
             _, predicted = torch.max(outputs, 1)
-            c = (predicted == labels).squeeze()
+            c = (predicted == labels.to(device)).squeeze()
             for i in range(4):
                 label = labels[i]
                 class_correct[label] += c[i].item()
