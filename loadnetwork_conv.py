@@ -16,11 +16,11 @@ import pandas as pd
 from PIL import Image
 
 #%% define parameters
-param_path = 'model_weights_google.pth'     # path to model param
+param_path = 'model_weights_conv.pth'     # path to model param
 test_path = 'SIGN/sign_mnist_test.csv'  # path to test csv
 
 N_classes = 26          # number of classes
-batch = 16               # batch size
+batch = 8               # batch size
 
 #%% define dataloader
 class SIGN(torch.utils.data.Dataset):
@@ -67,12 +67,13 @@ class Net(nn.Module):
         self.conv2 = nn.Conv2d(12, 24, 3, padding=1)
         # MaxPool2d(kernel_size, stride=None, padding=0, dilation=1, 
         #           return_indices=False, ceil_mode=False)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv3 = nn.Conv2d(24,48, 3, padding=1)
-        self.conv4 = nn.Conv2d(48,96, 3, padding=1)
-        self.pool = nn.MaxPool2d(2, 2)
+        self.pool = nn.MaxPool2d(2, 2) # 28 --> 14
+        self.conv3 = nn.Conv2d(24,36, 3) # 14 --> 12
+        self.conv4 = nn.Conv2d(36,48, 3) # 12 --> 10
+        self.conv5 = nn.Conv2d(48,60, 3) # 10 --> 8
+        self.conv6 = nn.Conv2d(60,72, 3) # 8 --> 6
         # Linear(in_features, out_features, bias=True)
-        self.fc1 = nn.Linear(96 * 7 * 7, 120)
+        self.fc1 = nn.Linear(72 * 6 * 6, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, N_classes)
 
@@ -80,8 +81,10 @@ class Net(nn.Module):
         x = F.relu(self.conv1(x))
         x = self.pool(F.relu(self.conv2(x)))
         x = F.relu(self.conv3(x))
-        x = self.pool(F.relu(self.conv4(x)))
-        x = x.view(-1, 96 * 7 * 7)
+        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
+        x = F.relu(self.conv6(x))
+        x = x.view(-1, 72 * 6 * 6)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -93,8 +96,7 @@ if __name__ == '__main__':
     net = Net()
     if use_gpu:
         net = net.cuda()
-#        device = torch.device("cuda")
-    net.load_state_dict(torch.load(param_path,map_location='cpu'))
+    net.load_state_dict(torch.load(param_path))
     net.eval()
     
     print('Start testing overall')
