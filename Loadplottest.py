@@ -18,7 +18,7 @@ import torchviz as tv
 from PIL import Image
 
 #%% define parameters
-param_path = 'model_weights.pth'     # path to model param
+param_path = 'model_weights_google.pth'     # path to model param
 test_path = 'SIGN/sign_mnist_test.csv'  # path to test csv
 
 N_classes = 26          # number of classes
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     net = Net()
     if use_gpu:
         net = net.cuda()
-    net.load_state_dict(torch.load(param_path))
+    net.load_state_dict(torch.load(param_path,map_location='cpu'))
     net.eval()
 
 # iets van visualisatie
@@ -131,17 +131,20 @@ if __name__ == '__main__':
 
 
         # ----- PARAMETER FOR PLOTTING
-        toplot = x2_activation   #Convolutional activation to plot
-        letter_label = 13        # letter to plot activation for
+        toplot = x5_activation   #Convolutional activation to plot
+        letter_label = 2        # letter to plot activation for
 
         #look for matching labels
         if labels[0] == letter_label:
             x_grid = toplot[0].view(toplot[0].size()[0],1,toplot[0].size()[1],toplot[0].size()[2])
-            plt.imshow(torchvision.utils.make_grid(x_grid).detach().numpy()[0],cmap = 'gray')
-            plt.colorbar(orientation='horizontal')
+            print(x_grid.size())
+            plt.imshow(torchvision.utils.make_grid(x_grid,nrow=16).detach().numpy()[0],cmap = 'gray')
+            #plt.colorbar(orientation='horizontal',pad=0.01,fraction=0.064)
             plt.show()
 
+
         weight = net.conv1.weight.data.numpy()
+
 
 
     print('Start testing overall')
@@ -159,6 +162,7 @@ if __name__ == '__main__':
     print('Accuracy of the network on the test images: %d %%' % (100 * correct / total))
 
     print('Start testing per class')
+    confusion = np.zeros((26, 26))
     class_correct = list(0. for i in range(N_classes))
     class_total = list(0. for i in range(N_classes))
     with torch.no_grad():
@@ -167,8 +171,11 @@ if __name__ == '__main__':
             outputs = net(images)
             _, predicted = torch.max(outputs, 1)
             c = (predicted == labels).squeeze()
+
             for i in range(4):
                 label = labels[i]
+                prediction = predicted[i]
+                confusion[label,prediction] = confusion[label,prediction]+1
                 class_correct[label] += c[i].item()
                 class_total[label] += 1
 
@@ -178,4 +185,14 @@ if __name__ == '__main__':
         if i == 9 or i == 25:   # skip J and Z since they are not included
             pass
         else:
+            for k in range(N_classes):
+                if k == 9 or k == 25:   # skip J and Z since they are not included
+                    pass
+                else:
+                    confusion[i,k] = confusion[i,k]/class_total[i]*100
             print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i]))
+
+    np.save( 'outfile1', confusion)
+    plt.imshow(confusion,cmap='binary')
+    plt.colorbar()
+    plt.show()
