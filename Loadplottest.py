@@ -165,7 +165,9 @@ if __name__ == '__main__':
     print('Accuracy of the network on the test images: %d %%' % (100 * correct / total))
 
     print('Start testing per class')
+     #initialize confusion matrix
     confusion = np.zeros((26, 26))
+        
     class_correct = list(0. for i in range(N_classes))
     class_total = list(0. for i in range(N_classes))
     with torch.no_grad():
@@ -174,7 +176,9 @@ if __name__ == '__main__':
             outputs = net(images)
             _, predicted = torch.max(outputs, 1)
             c = (predicted == labels).squeeze()
-
+                
+         #for each image in batch, add entry to confusion matrix keeping track of the actual label
+        # for each prediction
             for i in range(4):
                 label = labels[i]
                 prediction = predicted[i]
@@ -192,10 +196,10 @@ if __name__ == '__main__':
                 if k == 9 or k == 25:   # skip J and Z since they are not included
                     pass
                 else:
+                    #normalize the confusion matrix based on the number of instances for each class
                     confusion[i,k] = confusion[i,k]/class_total[i]*100
             print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i]))
 
+    #save the confusion matrix to a seperate file
     np.save( 'outfile1', confusion)
-    plt.imshow(confusion,cmap='binary')
-    plt.colorbar()
-    plt.show()
+
