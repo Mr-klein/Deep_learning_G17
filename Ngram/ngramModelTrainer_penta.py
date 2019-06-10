@@ -18,6 +18,9 @@ from os.path import basename
 # the default alphabet is a to z
 # compute tetragrams computes 4-gram. takes a long time with large datasets
 
+# UPDATE -- code automatically computes 5-grams along with 4-grams.
+# possibly extremely long computation with large datasets.
+# works fine for google10000
 
 def strip(word):
     # Accepts a string as input,
@@ -149,13 +152,52 @@ def computeQuadgramsConditionalPdf(quadgramsJointPdf, trigramsJointPdf):
                 res[paranteprevious, anteprevious, previous, :] = res[paranteprevious, anteprevious, previous, :] / res[paranteprevious, anteprevious, previous, :].flatten().sum()
     return res
 
-def main(filename, count_tetragrams=False):
+def countPentagrams(word):
+    res = Counter()
+    l = list(word)
+    for i in range(0, len(word)-4):
+        res[(l[i],l[i+1],l[i+2],l[i+3],l[i+4])] += 1
+    return res
+
+def computePentagramsJointPdf(pentagrams):
+    # This is the (joint) probability of tetragrams ("quadgrams")
+    res = np.zeros( (len(alphabet), len(alphabet), len(alphabet), len(alphabet), len(alphabet)) )
+    for i in range(0, len(alphabet)):
+        for j in range(0, len(alphabet)):
+            for k in range(0, len(alphabet)):
+                for l in range(0, len(alphabet)):
+                    for m in range(0, len(alphabet)):
+                        res[i, j, k, l, m] = pentagrams[alphabet[i], alphabet[j], alphabet[k], alphabet[l], alphabet[m]]
+                        if res[i, j, k, l, m] == 0:
+                            res[i, j, k, l, m] = np.finfo(float).eps
+    res = res / res.flatten().sum()
+    return res
+
+def computePentagramsConditionalPdf(pentagramsJointPdf, quadgramsJointPdf):
+    res = np.zeros( (len(alphabet), len(alphabet), len(alphabet), len(alphabet), len(alphabet)) )
+    for previous in range(0, len(alphabet)):
+        for anteprevious in range(0, len(alphabet)):
+            for paranteprevious in range(0, len(alphabet)):
+                for preparanteprevious in range(0, len(alphabet)):
+                    for i in range(0, len(alphabet)):
+                        res[preparanteprevious, paranteprevious, anteprevious, previous, i] = pentagramsJointPdf[preparanteprevious, paranteprevious, anteprevious, previous, i] / quadgramsJointPdf[preparanteprevious, paranteprevious, anteprevious, previous]
+    #Renormalize (to avoid numerical errors)
+    for previous in range(0, len(alphabet)):
+        for anteprevious in range(0, len(alphabet)):
+            for paranteprevious in range(0, len(alphabet)):
+                for preparanteprevious in range(0, len(alphabet)):
+                    res[preparanteprevious, paranteprevious, anteprevious, previous, :] = res[preparanteprevious, paranteprevious, anteprevious, previous, :] / res[preparanteprevious, paranteprevious, anteprevious, previous, :].flatten().sum()
+    return res
+
+
+def main(filename, count_tetragrams=True):
     unigrams = Counter()
     bigrams = Counter()
     trigrams = Counter()
     if count_tetragrams:
-        print('Computing tetragrams. This will normally take *a lot* of time..')
+        print('Computing tetragrams and pentagrams. This will normally take *a lot* of time..')
         quadgrams = Counter()
+        pentagrams = Counter()
     fin = fileinput.input(filename)
     for word in tqdm.tqdm(fin):
         strippedword = strip(word)
@@ -164,14 +206,17 @@ def main(filename, count_tetragrams=False):
         trigrams += countTrigrams(strippedword)
         if count_tetragrams:
             quadgrams += countQuadgrams(strippedword)
+            pentagrams += countPentagrams(strippedword)
     unigramsPdf = computeUnigramsPdf(unigrams)
     bigramsJointPdf = computeBigramsJointPdf(bigrams)
     trigramsJointPdf = computeTrigramsJointPdf(trigrams)
     if count_tetragrams:
         quadgramsJointPdf = computeQuadgramsJointPdf(quadgrams)
+        pentagramsJointPdf = computePentagramsJointPdf(pentagrams)
     else:
         quadgramsJointPdf = None
-    return unigramsPdf, bigramsJointPdf, trigramsJointPdf, quadgramsJointPdf
+        pentagramsJointPdf = None
+    return unigramsPdf, bigramsJointPdf, trigramsJointPdf, quadgramsJointPdf, pentagramsJointPdf
 
 class TestMethods(unittest.TestCase):
     def test_unigrams(self):
@@ -195,6 +240,12 @@ class TestMethods(unittest.TestCase):
         unigramsPdf, bigramsJointPdf, trigramsJointPdf, quadgramsJointPdf = main('fixtures/dummy2.txt', count_tetragrams=True)
         quadgramsPdf = computeQuadgramsConditionalPdf(quadgramsJointPdf, trigramsJointPdf)
         self.assertTrue(abs(quadgramsPdf[alphabet.index('r'), alphabet.index('s'), alphabet.index('o'), alphabet.index('n')] - 1.) < 1e-5)
+
+    def test_pentagrams(self):
+        unigramsPdf, bigramsJointPdf, trigramsJointPdf, quadgramsJointPdf = main('fixtures/dummy2.txt', count_tetragrams=True)
+        pentagramsPdf = computePentagramsConditionalPdf(pentagramsJointPdf,quadgramsJointPdf)
+        self.assertTrue(abs(pentagramsPdf[alphabet.index('r'), alphabet.index('s'), alphabet.index('o'), alphabet.index('n')] - 1.) < 1e-5)
+
 
 if __name__ == "__main__":
     logger = logging.getLogger('::ngramModelTrainer::')
@@ -254,7 +305,7 @@ if __name__ == "__main__":
 
     if args.input_corpus != '':
         filename = args.input_corpus
-        unigramsPdf, bigramsJointPdf, trigramsJointPdf, quadgramsJointPdf = main(filename, count_tetragrams=args.compute_tetragrams)
+        unigramsPdf, bigramsJointPdf, trigramsJointPdf, quadgramsJointPdf, pentagramsJointPdf = main(filename, count_tetragrams=args.compute_tetragrams)
         #print(np.log(computeBigramsConditionalPdf(bigramsJointPdf, unigramsPdf)))
         #print(np.log(computeTrigramsConditionalPdf(trigramsJointPdf, bigramsJointPdf)))
         savedict = dict(
@@ -265,7 +316,10 @@ if __name__ == "__main__":
             )
         if args.compute_tetragrams:
             savedict['quadgrams'] = computeQuadgramsConditionalPdf(quadgramsJointPdf, trigramsJointPdf)
+            savedict['pentagrams'] = computePentagramsConditionalPdf(pentagramsJointPdf, quadgramsJointPdf)
             np.save( 'savedmodel/quadgrams', savedict['quadgrams'])
+            np.save( 'savedmodel/pentagrams', savedict['pentagrams'])
+
         scipy.io.savemat(basename(filename)+'.ngrams.mat', savedict)
         np.save( 'savedmodel/alphabet', alphabet)
         np.save( 'savedmodel/unigrams', unigramsPdf)
