@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon May 20 10:46:58 2019
+Created on Mon May 20 11:06:52 2019
 
 @author: RJ
 """
@@ -9,18 +9,25 @@ Created on Mon May 20 10:46:58 2019
 import torch
 import torchvision
 import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 import pandas as pd
 from PIL import Image
+from torch.optim.lr_scheduler import StepLR
 
 #%% define parameters
-param_path = 'weights_mmloss.pth'     # path to model param
-test_path = 'SIGN/sign_mnist_test.csv'  # path to test csv
+train_path = 'SIGN/sign_mnist_train.csv'  #Path to training csv
+lossfile = "loss_explr2.txt"
+weightsfile = 'weights_explr2.pth'
+Lr = 0.01
+Momentum = 0.9
+N_classes = 26                            #Number of classes
 
-N_classes = 26          # number of classes
 batch = 8               # batch size
+ep = 50                  # number of epochs
 
 #%% define dataloader
 class SIGN(torch.utils.data.Dataset):
@@ -44,9 +51,9 @@ class SIGN(torch.utils.data.Dataset):
    
 #%% load data
 transform = transforms.Compose([transforms.ToTensor()])
-testset = SIGN(test_path,28,28,transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=batch,
-                                         shuffle=False, num_workers=1)
+trainset = SIGN(train_path,28,28,transform)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch,
+                                          shuffle=True, num_workers=1)
 
 #%% define classes
 classes = ('A', 'B', 'C', 'D',
@@ -86,48 +93,48 @@ class Net(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-    
-#%% testing network
+
+#%% training network
 if __name__ == '__main__':
     use_gpu = torch.cuda.is_available()
     net = Net()
     if use_gpu:
         net = net.cuda()
-        device = torch.device("cuda")
-    net.load_state_dict(torch.load(param_path))
-#    net.load_state_dict(torch.load(param_path,map_location='cpu'))
-    net.eval()
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(), lr=Lr, momentum=Momentum)
+    scheduler = StepLR(optimizer, step_size=1,gamma=0.9)
     
-    print('Start testing overall')
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for data in testloader:
-            images, labels = data
-            outputs = net(images.to(device))
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels.to(device)).sum().item()
+    for epoch in range(ep):  # loop over the dataset multiple times
+        scheduler.step()
+        print('Epoch:', epoch,'LR:', scheduler.get_lr())
+        running_loss = 0.0
+        for i, data in enumerate(trainloader, 0):
+            # get the inputs
+            inputs, labels = data
+            if use_gpu:
+                inputs = inputs.cuda()
+                labels = labels.cuda()
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-    print('Accuracy of the network on the test images: %d %%' % (100 * correct / total))
-    
-    print('Start testing per class')
-    class_correct = list(0. for i in range(N_classes))
-    class_total = list(0. for i in range(N_classes))
-    with torch.no_grad():
-        for data in testloader:
-            images, labels = data
-            outputs = net(images.to(device))
-            _, predicted = torch.max(outputs, 1)
-            c = (predicted == labels.to(device)).squeeze()
-            for i in range(4):
-                label = labels[i]
-                class_correct[label] += c[i].item()
-                class_total[label] += 1
+            # forward + backward + optimize
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
+            # print statistics
+            running_loss += loss.item()
+            if i % 100 == 99:    # print every 100 mini-batches
+                print('[%d, %5d] loss: %.3f' %(epoch + 1, i + 1, running_loss))
+                loss_file = open(lossfile,"a")
+                loss_file.write(repr(running_loss)+ '\n')
+                loss_file.close()
+                running_loss = 0.0
 
-    for i in range(N_classes):
-        if i == 9 or i == 25:   # skip J and Z since they are not included
-            pass
-        else:
-            print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i]))
+    print('Finished Training')
+
+    # save model
+    print('Saving Model Parameters...')
+    torch.save(net.state_dict(), weightsfile)
+    print('done')

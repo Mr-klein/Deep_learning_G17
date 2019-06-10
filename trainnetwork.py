@@ -19,6 +19,10 @@ from PIL import Image
 
 #%% define parameters
 train_path = 'SIGN/sign_mnist_train.csv'  #Path to training csv
+lossfile = "loss_reference.txt"
+weightsfile = 'weights_reference.pth'
+Lr = 0.001
+Momentum = 0.9
 N_classes = 26                            #Number of classes
 
 batch = 8               # batch size
@@ -96,7 +100,7 @@ if __name__ == '__main__':
     if use_gpu:
         net = net.cuda()
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=Lr, momentum=Momentum)
     
 #    # save loss curve
 #    from tensorboardX import SummaryWriter
@@ -123,18 +127,14 @@ if __name__ == '__main__':
             running_loss += loss.item()
             if i % 100 == 99:    # print every 100 mini-batches
                 print('[%d, %5d] loss: %.3f' %(epoch + 1, i + 1, running_loss))
-                loss_file = open("running_loss_google.txt","a")
+                loss_file = open(lossfile,"a")
                 loss_file.write(repr(running_loss)+ '\n')
                 loss_file.close()
                 running_loss = 0.0
- #               niter = epoch * len(trainloader) + i
- #               writer.add_scalar('Train/loss',loss.item(),niter)
 
     print('Finished Training')
- #   writer.export_scalars_to_json('./all_Scalars.json')
- #   writer.close()
-    
+
     # save model
     print('Saving Model Parameters...')
-    torch.save(net.state_dict(), 'model_weights_google.pth')
+    torch.save(net.state_dict(), weightsfile)
     print('done')
