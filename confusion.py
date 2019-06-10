@@ -1,4 +1,6 @@
-
+# Author: keith
+# loads the output matrix from "loadplottest.py"
+# and plots the confusion matrix for the classifier
 import torch
 import torchvision
 import torchvision.transforms as transforms
