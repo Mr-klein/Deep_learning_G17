@@ -5,6 +5,9 @@ Created on Mon May 20 10:46:58 2019
 
 @author: RJ
         : KK
+        
+       Loads the neural network weights. plots the intermediate filter outputs and
+       tests the model accuracy using the test data set
 """
 import torch
 import torchvision
