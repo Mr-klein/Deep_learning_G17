@@ -34,7 +34,7 @@ class SIGN(torch.utils.data.Dataset):
         img_as_img = img_as_img.convert('RGB')
         if self.transforms is not None:
             img_as_tensor = self.transforms(img_as_img)
-            img_as_tensor = img_as_tensor.reshape1(1,224,224)
+            img_as_tensor = img_as_tensor.reshape1(3,224,224)
             #img_as_tensor =  torch.stack((img_as_tensor, torch.zeros(224,224), torch.zeros(224,224)))
             #print(img_as_tensor.size())
             #img_as_tensor =  torch.stack((img_as_tensor, img_as_tensor, img_as_tensor))
