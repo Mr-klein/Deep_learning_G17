@@ -170,3 +170,6 @@ if __name__ == '__main__':
 
     model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft,
                                  num_epochs=num_epochs, is_inception=(model_name=="inception"))
+    print('Saving Model Parameters...')
+    torch.save(model_ft.state_dict(), 'resmodel_weights.pth')
+    print('done')
