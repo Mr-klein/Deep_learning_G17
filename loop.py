@@ -24,11 +24,11 @@ fs = [[6,12,18,24],[12,24,36,48],[24,48,72,96],[48,96,144,192]]
 fc1 = 120
 fc2 = 80
 
-Lr = [0.1] #, 0.01, 0.001]
-Momentum =  [0.9] #[0.7, 0.8,
+Lr = [0.1, 0.01, 0.001]
+Momentum = [0.7, 0.8, 0.9]
 
 batch = 8
-ep = 1
+ep = 50
 
 #%% define dataloader
 class SIGN(torch.utils.data.Dataset):
@@ -91,54 +91,59 @@ class Net(nn.Module):
 
 #%% training network
 if __name__ == '__main__':
-    for j in range(4):
-        fs1 = fs[j][0]
-        fs2 = fs[j][1]
-        fs3 = fs[j][2]
-        fs4 = fs[j][3]
+    for l in range(3):  # loop over Momentum
+        for k in range(3):  # loop over Lr
+            for j in range(4):  # loop over filters
+                fs1 = fs[j][0]
+                fs2 = fs[j][1]
+                fs3 = fs[j][2]
+                fs4 = fs[j][3]
 
-        weight_path = 'weightfs%s.pth' % j
-        loss_path = 'lossfs%s.txt' % j
+                learnrate = Lr[k]
+                moment = Momentum[l]
 
-        use_gpu = torch.cuda.is_available()
-        net = Net()
-        if use_gpu:
-            net = net.cuda()
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.SGD(net.parameters(), lr=Lr, momentum=Momentum)
-        scheduler = StepLR(optimizer, step_size=1,gamma=0.9)
-    
-        for epoch in range(ep):  # loop over the dataset multiple times
-            scheduler.step()
-            print('Filtersize:', j,'Epoch:', epoch,'LR:', scheduler.get_lr())
-            running_loss = 0.0
-            for i, data in enumerate(trainloader, 0):
-                # get the inputs
-                inputs, labels = data
+                weight_path = 'weightfs%slr%smo%s.pth' % (j,k,l)
+                loss_path = 'lossfs%slr%smo%s.txt' % (j,k,l)
+
+                use_gpu = torch.cuda.is_available()
+                net = Net()
                 if use_gpu:
-                    inputs = inputs.cuda()
-                    labels = labels.cuda()
-                # zero the parameter gradients
-                optimizer.zero_grad()
-
-                # forward + backward + optimize
-                outputs = net(inputs)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-
-                # print statistics
-                running_loss += loss.item()
-                if i % 100 == 99:    # print every 100 mini-batches
-                    print('[%d, %5d] loss: %.3f' %(epoch + 1, i + 1, running_loss))
-                    loss_file = open(loss_path,"a")
-                    loss_file.write(repr(running_loss)+ '\n')
-                    loss_file.close()
+                    net = net.cuda()
+                criterion = nn.CrossEntropyLoss()
+                optimizer = optim.SGD(net.parameters(), lr=learnrate, momentum=moment)
+                scheduler = StepLR(optimizer, step_size=1,gamma=0.9)
+            
+                for epoch in range(ep):  # loop over the dataset multiple times
+                    scheduler.step()
+                    print('Momentum:', Momentum[l],'Lr:', Lr[k],'Filterset:', j+1,'Epoch:', epoch+1,'LR:', scheduler.get_lr())
                     running_loss = 0.0
+                    for i, data in enumerate(trainloader, 0):
+                        # get the inputs
+                        inputs, labels = data
+                        if use_gpu:
+                            inputs = inputs.cuda()
+                            labels = labels.cuda()
+                        # zero the parameter gradients
+                        optimizer.zero_grad()
 
-        print('Finished Training for filtersize:',j)
+                        # forward + backward + optimize
+                        outputs = net(inputs)
+                        loss = criterion(outputs, labels)
+                        loss.backward()
+                        optimizer.step()
 
-        # save model
-        print('Saving Model Parameters...')
-        torch.save(net.state_dict(), weight_path)
-        print('done')
+                        # print statistics
+                        running_loss += loss.item()
+                        if i % 100 == 99:    # print every 100 mini-batches
+                            print('[%d, %5d] loss: %.3f' %(epoch + 1, i + 1, running_loss))
+                            loss_file = open(loss_path,"a")
+                            loss_file.write(repr(running_loss)+ '\n')
+                            loss_file.close()
+                            running_loss = 0.0
+
+                print('Finished Training for filterset:',j,'learning rate:',Lr[k], 'momentum:',Momentum[l])
+
+                # save model
+                print('Saving Model Parameters...')
+                torch.save(net.state_dict(), weight_path)
+                print('done')
