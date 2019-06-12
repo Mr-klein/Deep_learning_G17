@@ -41,7 +41,7 @@ num_classes = 26
 batch_size = 4
 
 # Number of epochs to train for
-num_epochs = 30
+num_epochs = 1
 
 # Flag for feature extracting. When False, we finetune the whole model,
 #   when True we only update the reshaped layer params
