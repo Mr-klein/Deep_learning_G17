@@ -36,8 +36,8 @@ class SIGN(torch.utils.data.Dataset):
             img_as_tensor = self.transforms(img_as_img)
             #print(img_as_tensor.size())
             img_as_tensor = img_as_tensor.reshape(224,224)
-            #img_as_tensor =  torch.stack((img_as_tensor, torch.zeros(224,224), torch.zeros(224,224)))
-            img_as_tensor =  torch.stack((img_as_tensor, img_as_tensor, img_as_tensor))
+            img_as_tensor =  torch.stack((img_as_tensor, torch.zeros(224,224), torch.zeros(224,224)))
+            #img_as_tensor =  torch.stack((img_as_tensor, img_as_tensor, img_as_tensor))
 
         return (img_as_tensor,label)
     def __len__(self):
