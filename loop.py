@@ -24,8 +24,8 @@ fs = [[6,12,18,24],[12,24,36,48],[24,48,72,96],[48,96,144,192]]
 fc1 = 120
 fc2 = 80
 
-Lr = [0.1, 0.01, 0.001]
-Momentum = [0.7, 0.8, 0.9]
+Lr = [0.01, 0.005, 0.001]
+Momentum = [0.8, 0.85, 0.9, 0.95]
 
 batch = 8
 ep = 50
@@ -91,8 +91,8 @@ class Net(nn.Module):
 
 #%% training network
 if __name__ == '__main__':
-    for l in range(3):  # loop over Momentum
-        for k in range(3):  # loop over Lr
+    for l in range(len(Momentum)):  # loop over Momentum
+        for k in range(len(Lr)):  # loop over Lr
             for j in range(4):  # loop over filters
                 fs1 = fs[j][0]
                 fs2 = fs[j][1]
@@ -102,8 +102,8 @@ if __name__ == '__main__':
                 learnrate = Lr[k]
                 moment = Momentum[l]
 
-                weight_path = 'weightfs%slr%smo%s.pth' % (j,k,l)
-                loss_path = 'lossfs%slr%smo%s.txt' % (j,k,l)
+                weight_path = 'weights/weightfs%slr%smo%s.pth' % (j,k,l)
+                loss_path = 'loss/lossfs%slr%smo%s.txt' % (j,k,l)
 
                 use_gpu = torch.cuda.is_available()
                 net = Net()

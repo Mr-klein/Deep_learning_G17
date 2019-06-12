@@ -20,8 +20,8 @@ from torch.optim.lr_scheduler import StepLR
 
 #%% define parameters
 train_path = 'SIGN/sign_mnist_train.csv'  #Path to training csv
-lossfile = "loss_explr2.txt"
-weightsfile = 'weights_explr2.pth'
+lossfile = "loss_explr3.txt"
+weightsfile = 'weights_explr3.pth'
 Lr = 0.01
 Momentum = 0.9
 N_classes = 26                            #Number of classes
