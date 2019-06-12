@@ -41,7 +41,7 @@ num_classes = 26
 batch_size = 4
 
 # Number of epochs to train for
-num_epochs = 10
+num_epochs = 30
 
 # Flag for feature extracting. When False, we finetune the whole model,
 #   when True we only update the reshaped layer params
@@ -171,5 +171,5 @@ if __name__ == '__main__':
     model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft,
                                  num_epochs=num_epochs, is_inception=(model_name=="inception"))
     print('Saving Model Parameters...')
-    torch.save(model_ft.state_dict(), 'resmodel_weights.pth')
+    torch.save(model_ft.state_dict(), 'resmodel_weights30.pth')
     print('done')
