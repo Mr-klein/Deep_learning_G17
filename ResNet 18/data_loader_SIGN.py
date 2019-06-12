@@ -31,12 +31,12 @@ class SIGN(torch.utils.data.Dataset):
         label = self.labels[index]
         img_as_np = np.asarray(self.data.iloc[index][1:]).reshape(28,28).astype('uint8')
         img_as_img = Image.fromarray(img_as_np)
-        img_as_img = img_as_img.convert('L')
+        img_as_img = img_as_img.convert('RGB')
         if self.transforms is not None:
             img_as_tensor = self.transforms(img_as_img)
+            img_as_tensor = img_as_tensor.reshape1(1,224,224)
+            #img_as_tensor =  torch.stack((img_as_tensor, torch.zeros(224,224), torch.zeros(224,224)))
             #print(img_as_tensor.size())
-            img_as_tensor = img_as_tensor.reshape(224,224)
-            img_as_tensor =  torch.stack((img_as_tensor, torch.zeros(224,224), torch.zeros(224,224)))
             #img_as_tensor =  torch.stack((img_as_tensor, img_as_tensor, img_as_tensor))
 
         return (img_as_tensor,label)
