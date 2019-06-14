@@ -12,7 +12,7 @@ import pandas as pd
 import torchviz as tv
 from PIL import Image
 
-confusion = np.load('outfile1.npy')
+confusion = np.load('confusion_matrix.npy')
 plt.xticks(np.arange(0, 26), ['A', 'B', 'C', 'D',
            'E', 'F', 'G', 'H', 'I',
             'J','K','L','M','N','O',

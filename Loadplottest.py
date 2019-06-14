@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+
+
+#
 """
 Created on Mon May 20 10:46:58 2019
 
-@author: RJ
-        : KK
-        
+@author: RJ  (classifier loading and testing)
+        : KK (plot intermediate filter outputs and save confusion matrix)
+
        Loads the neural network weights. plots the intermediate filter outputs and
-       tests the model accuracy using the test data set
+       tests the model accuracy using the test data set. also outpus a confusion matrix
+       as npy file
 """
 import torch
 import torchvision
@@ -167,7 +172,7 @@ if __name__ == '__main__':
     print('Start testing per class')
      #initialize confusion matrix
     confusion = np.zeros((26, 26))
-        
+
     class_correct = list(0. for i in range(N_classes))
     class_total = list(0. for i in range(N_classes))
     with torch.no_grad():
@@ -176,7 +181,7 @@ if __name__ == '__main__':
             outputs = net(images)
             _, predicted = torch.max(outputs, 1)
             c = (predicted == labels).squeeze()
-                
+
          #for each image in batch, add entry to confusion matrix keeping track of the actual label
         # for each prediction
             for i in range(4):
@@ -201,5 +206,4 @@ if __name__ == '__main__':
             print('Accuracy of %5s : %2d %%' % (classes[i], 100 * class_correct[i] / class_total[i]))
 
     #save the confusion matrix to a seperate file
-    np.save( 'outfile1', confusion)
-
+    np.save( 'confusion_matrix', confusion)
