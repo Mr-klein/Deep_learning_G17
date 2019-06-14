@@ -91,13 +91,13 @@ class Net(nn.Module):
 
 
 #load Ngrams
-bigrams = np.load('savedmodel/bigrams.npy')
-trigrams = np.load('savedmodel/trigrams.npy')
-unigrams = np.load('savedmodel/unigrams.npy')
-quadgrams = np.load('savedmodel/quadgrams.npy')
+bigrams = np.load('savedNgram/bigrams.npy')
+trigrams = np.load('savedNgram/trigrams.npy')
+unigrams = np.load('savedNgram/unigrams.npy')
+quadgrams = np.load('savedNgram/quadgrams.npy')
 
 #Load words to use for testing
-wordlist = np.load('testwords.npy')
+wordlist = np.load('processed_data/testwords.npy')
 images = []
 labels = []
 if __name__ == '__main__':
@@ -110,15 +110,20 @@ if __name__ == '__main__':
 
 
     #%% testing network
+
+    # initializing performance parameters
     total_words = 0
     words_correct = 0
     letters_correct = 0
     letters_total = 0
+
+    # loop over all words in the test dataset
+    print('testing network on sequences ... ')
     for k,word in enumerate(wordlist,0):
-        print(k)
+        #print(k)
         total_words += 1
 
-
+        # initialize incorrect translation flag
         word_wrong = False
         letters_so_far = []
         for j,letter in enumerate(word,0):
@@ -135,48 +140,55 @@ if __name__ == '__main__':
                 net = net.cuda()
                 device = torch.device("cuda")
             #net.load_state_dict(torch.load(param_path))
+            #load the CNN classifier weights
             net.load_state_dict(torch.load(param_path,map_location='cpu'))
             net.eval()
 
 
 
-
+            #initialize label search flag (flag is true if program is looking for image with desired label)
             labelsearch = True
             with torch.no_grad():
                 #Find random image corresponding to current letter
                 while(labelsearch):
+                    # select a random batch from the dataset
                     batchtouse = random.randint(0,448)
                     for i,label in enumerate(labels[batchtouse],0):
+
+                        # find desired image in chosen batch
                         if label == classes.index(letter):
                             image = images[batchtouse][i]
                             image = image.view(1,1,28,28)
                             outputs = net(image.to(device))
                             A = outputs.data.numpy()
-                            sm = torch.nn.Softmax()
+
+                            #obtain probabilities from output
+                            sm = torch.nn.Softmax(dim=1)
                             probabilities = sm(outputs)
+                            #print(probabilities)
                             probabilities = probabilities.squeeze()
 
                             #outputs = net(images)
 
                             _, predicted = torch.max(outputs.data, 1)
-                            # if its the first letter, only rely on the classifier
+                            # if it's the first letter, only rely on the classifier
                             if j == 1:
-                                weight = 0.1
+                                weight = 0
                             if j == 2:
                                 weight = 0.2
-                            if j >= 3:
-                                weight = 0.7
+                            if j == 3:
+                                weight = 0.5
 
                             if j == 0:
                                 weight = 0
                                 previous_letter_prediction = probabilities
 
                             #weight = 0
-
+                            # predict the next letter based on current classification
                             next_letter_prediction = predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)
-                            # use a weighted some of the probability distribution from the classifier and the predictor
+                            ## use a weighted some of the probability distribution from the classifier and the predictor
                             #print(np.asarray(previous_letter_prediction))
-                            predicted = np.argmax(weight * np.asarray(previous_letter_prediction) + (1-weight) * probabilities.numpy())
+                            #predicted = np.argmax(weight * np.asarray(previous_letter_prediction) + (1-weight) * probabilities.numpy())
 
                             #when a letter is wrong, the entire word is wrong
                             if predicted != label:
@@ -186,15 +198,12 @@ if __name__ == '__main__':
                                 word_wrong = True
                                 letter_wrong = True
                             labelsearch = False
-
-
-
                             break
+
             if letter_wrong == False:
                 letters_correct += 1
         if word_wrong == False:
             words_correct += 1
-        if k>500:
-            break
 
-    print('The accuracy of the network on sequences is ' + str((letters_correct/letters_total)*100))
+    print('Done')
+    print('The accuracy of the network on sequences is ' + str((words_correct/total_words)*100))

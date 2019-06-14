@@ -17,9 +17,10 @@ import torch.nn.functional as F
 import pandas as pd
 import torchviz as tv
 from PIL import Image
+import sys
 
 
-first_letters = 'CUP'
+first_letters = 'FOO'
 
 
 #load Ngrams
@@ -84,7 +85,7 @@ def predict(first_letters,unigrams,bigrams,trigrams,quadgrams,letters):
         prediction = np.argmax(possible_predictions)
     return possible_predictions
 
-#a= predict(first_letters,unigrams,bigrams,trigrams,quadgrams)
+#a= predict(first_letters,unigrams,bigrams,trigrams,quadgrams,letters)
 #a
 #a= np.asscalar(np.asarray(a))
 
