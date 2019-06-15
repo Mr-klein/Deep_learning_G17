@@ -29,21 +29,21 @@ trigrams = np.load('savedNgram/trigrams.npy')
 unigrams = np.load('savedNgram/unigrams.npy')
 quadgrams = np.load('savedNgram/quadgrams.npy')
 
-
-plt.xticks(np.arange(0, 26), ['A', 'B', 'C', 'D',
-           'E', 'F', 'G', 'H', 'I',
-            'J','K','L','M','N','O',
-            'P','Q','R','S','T','U','V','W','X','Y','Z'])
-plt.yticks(np.arange(0, 26), ['A', 'B', 'C', 'D',
-           'E', 'F', 'G', 'H', 'I',
-            'J','K','L','M','N','O',
-            'P','Q','R','S','T','U','V','W','X','Y','Z'])
-
-plt.ylabel('True label')
-plt.xlabel('Predicted label')
-plt.imshow(bigrams,cmap='PuBu',vmin=0., vmax=1.)
-plt.Normalize(vmin=0.,vmax=100.)
-plt.colorbar(pad=0.01).ax.set_title('prediction %')
+#
+# plt.xticks(np.arange(0, 26), ['A', 'B', 'C', 'D',
+#            'E', 'F', 'G', 'H', 'I',
+#             'J','K','L','M','N','O',
+#             'P','Q','R','S','T','U','V','W','X','Y','Z'])
+# plt.yticks(np.arange(0, 26), ['A', 'B', 'C', 'D',
+#            'E', 'F', 'G', 'H', 'I',
+#             'J','K','L','M','N','O',
+#             'P','Q','R','S','T','U','V','W','X','Y','Z'])
+#
+# plt.ylabel('True label')
+# plt.xlabel('Predicted label')
+# plt.imshow(bigrams,cmap='PuBu',vmin=0., vmax=1.)
+# plt.Normalize(vmin=0.,vmax=100.)
+# plt.colorbar(pad=0.01).ax.set_title('prediction %')
 
 
 #plt.show()

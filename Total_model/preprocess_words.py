@@ -15,4 +15,4 @@ while i < len(words):
 
 
 print(len(words))
-np.save( 'testwords', words)
+np.save( 'processed_data/testwords', words)

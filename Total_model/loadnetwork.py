@@ -5,6 +5,8 @@ Created on Mon May 20 10:46:58 2019
 
 @author: RJ
 """
+import time
+from tqdm import tqdm
 import random
 import torch
 import torchvision
@@ -119,91 +121,98 @@ if __name__ == '__main__':
 
     # loop over all words in the test dataset
     print('testing network on sequences ... ')
-    for k,word in enumerate(wordlist,0):
-        #print(k)
-        total_words += 1
+    with tqdm(total = len(wordlist)) as pbar:
+        for k,word in tqdm(enumerate(wordlist,0)):
+            #print(k)
+            total_words += 1
 
-        # initialize incorrect translation flag
-        word_wrong = False
-        letters_so_far = []
-        for j,letter in enumerate(word,0):
-            letter_wrong = False
-            letters_total += 1
+            # initialize incorrect translation flag
+            word_wrong = False
+            letters_so_far = []
+            for j,letter in enumerate(word,0):
+                letter_wrong = False
+                letters_total += 1
 
-            # if the letter is not the first letter, use the predicted letter from NGRAM
-            if j != 0:
-                previous_letter_prediction = next_letter_prediction
-            use_gpu = torch.cuda.is_available()
-            net = Net()
-            device = torch.device("cpu")
-            if use_gpu:
-                net = net.cuda()
-                device = torch.device("cuda")
-            #net.load_state_dict(torch.load(param_path))
-            #load the CNN classifier weights
-            net.load_state_dict(torch.load(param_path,map_location='cpu'))
-            net.eval()
+                # if the letter is not the first letter, use the predicted letter from NGRAM
+                if j != 0:
+                    previous_letter_prediction = next_letter_prediction
+                use_gpu = torch.cuda.is_available()
+                net = Net()
+                device = torch.device("cpu")
+                if use_gpu:
+                    net = net.cuda()
+                    device = torch.device("cuda")
+                #net.load_state_dict(torch.load(param_path))
+                #load the CNN classifier weights
+                net.load_state_dict(torch.load(param_path,map_location='cpu'))
+                net.eval()
 
 
 
-            #initialize label search flag (flag is true if program is looking for image with desired label)
-            labelsearch = True
-            with torch.no_grad():
-                #Find random image corresponding to current letter
-                while(labelsearch):
-                    # select a random batch from the dataset
-                    batchtouse = random.randint(0,448)
-                    for i,label in enumerate(labels[batchtouse],0):
+                #initialize label search flag (flag is true if program is looking for image with desired label)
+                labelsearch = True
+                with torch.no_grad():
+                    #Find random image corresponding to current letter
+                    while(labelsearch):
+                        # select a random batch from the dataset
+                        batchtouse = random.randint(0,448)
+                        for i,label in enumerate(labels[batchtouse],0):
 
-                        # find desired image in chosen batch
-                        if label == classes.index(letter):
-                            image = images[batchtouse][i]
-                            image = image.view(1,1,28,28)
-                            outputs = net(image.to(device))
-                            A = outputs.data.numpy()
+                            # find desired image in chosen batch
+                            if label == classes.index(letter):
+                                image = images[batchtouse][i]
+                                image = image.view(1,1,28,28)
+                                outputs = net(image.to(device))
+                                A = outputs.data.numpy()
 
-                            #obtain probabilities from output
-                            sm = torch.nn.Softmax(dim=1)
-                            probabilities = sm(outputs)
-                            #print(probabilities)
-                            probabilities = probabilities.squeeze()
+                                #obtain probabilities from output
+                                sm = torch.nn.Softmax(dim=1)
+                                probabilities = sm(outputs)
+                                #print(probabilities)
+                                probabilities = probabilities.squeeze()
 
-                            #outputs = net(images)
+                                #outputs = net(images)
 
-                            _, predicted = torch.max(outputs.data, 1)
-                            # if it's the first letter, only rely on the classifier
-                            if j == 1:
-                                weight = 0
-                            if j == 2:
-                                weight = 0.2
-                            if j == 3:
-                                weight = 0.5
+                                _, predicted = torch.max(outputs.data, 1)
+                                # if it's the first letter, only rely on the classifier
+                                if j == 1:
+                                    weight = 0.24
+                                if j == 2:
+                                    weight = 0.2
+                                if j >= 3:
+                                    weight = 0.45
 
-                            if j == 0:
-                                weight = 0
-                                previous_letter_prediction = probabilities
 
-                            #weight = 0
-                            # predict the next letter based on current classification
-                            next_letter_prediction = predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)
-                            ## use a weighted some of the probability distribution from the classifier and the predictor
-                            #print(np.asarray(previous_letter_prediction))
-                            #predicted = np.argmax(weight * np.asarray(previous_letter_prediction) + (1-weight) * probabilities.numpy())
 
-                            #when a letter is wrong, the entire word is wrong
-                            if predicted != label:
-                        #        print(probabilities)
-                        #        plt.plot(probabilities.numpy())
-                        #        plt.show()
-                                word_wrong = True
-                                letter_wrong = True
-                            labelsearch = False
-                            break
+                                if j == 0:
+                                    weight = 0
+                                    previous_letter_prediction = probabilities
 
-            if letter_wrong == False:
-                letters_correct += 1
-        if word_wrong == False:
-            words_correct += 1
+                                #weight = 0
+                                # predict the next letter based on current classification
+                                next_letter_prediction = predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)
+                                ## use a weighted some of the probability distribution from the classifier and the predictor
+                                #print(np.asarray(previous_letter_prediction)np
+                                multiplied =np.multiply(np.asarray(previous_letter_prediction),probabilities.numpy())
+                                predicted = np.argmax(weight * np.asarray(previous_letter_prediction) + (1-weight) * probabilities.numpy())
+                                letters_so_far.append(classes[predicted])
+                                #when a letter is wrong, the entire word is wrong
+                                #print(letters_so_far)
+                                if predicted != label:
+                                    #print(probabilities)
+                                    #print(label)
 
+                                    #plt.show()
+                                    word_wrong = True
+                                    letter_wrong = True
+                                labelsearch = False
+                                break
+
+
+                if letter_wrong == False:
+                    letters_correct += 1
+            if word_wrong == False:
+                words_correct += 1
+            pbar.update(1)
     print('Done')
     print('The accuracy of the network on sequences is ' + str((words_correct/total_words)*100))
