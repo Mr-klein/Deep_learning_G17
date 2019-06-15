@@ -1,3 +1,7 @@
+
+# author: Keith
+# tests the prediction accuracy of Ngrams given that the previous letters are correct
+
 from Predictor import predict
 import numpy as np
 

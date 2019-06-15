@@ -110,7 +110,16 @@ if __name__ == '__main__':
         labels.append(label)
 
 
-
+    use_gpu = torch.cuda.is_available()
+    net = Net()
+    device = torch.device("cpu")
+    if use_gpu:
+        net = net.cuda()
+        device = torch.device("cuda")
+    #net.load_state_dict(torch.load(param_path))
+    #load the CNN classifier weights
+    net.load_state_dict(torch.load(param_path,map_location='cpu'))
+    net.eval()
     #%% testing network
 
     # initializing performance parameters
@@ -123,11 +132,12 @@ if __name__ == '__main__':
     print('testing network on sequences ... ')
     with tqdm(total = len(wordlist)) as pbar:
         for k,word in tqdm(enumerate(wordlist,0)):
-            #print(k)
+            #update count with total number of words
             total_words += 1
 
             # initialize incorrect translation flag
             word_wrong = False
+            # initialize list with current translated letters
             letters_so_far = []
             for j,letter in enumerate(word,0):
                 letter_wrong = False
@@ -136,18 +146,6 @@ if __name__ == '__main__':
                 # if the letter is not the first letter, use the predicted letter from NGRAM
                 if j != 0:
                     previous_letter_prediction = next_letter_prediction
-                use_gpu = torch.cuda.is_available()
-                net = Net()
-                device = torch.device("cpu")
-                if use_gpu:
-                    net = net.cuda()
-                    device = torch.device("cuda")
-                #net.load_state_dict(torch.load(param_path))
-                #load the CNN classifier weights
-                net.load_state_dict(torch.load(param_path,map_location='cpu'))
-                net.eval()
-
-
 
                 #initialize label search flag (flag is true if program is looking for image with desired label)
                 labelsearch = True
@@ -175,6 +173,9 @@ if __name__ == '__main__':
 
                                 _, predicted = torch.max(outputs.data, 1)
                                 # if it's the first letter, only rely on the classifier
+                                if j == 0:
+                                    weight = 0
+                                    previous_letter_prediction = probabilities
                                 if j == 1:
                                     weight = 0.24
                                 if j == 2:
@@ -182,19 +183,14 @@ if __name__ == '__main__':
                                 if j >= 3:
                                     weight = 0.45
 
-
-
-                                if j == 0:
-                                    weight = 0
-                                    previous_letter_prediction = probabilities
-
-                                #weight = 0
                                 # predict the next letter based on current classification
                                 next_letter_prediction = predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)
-                                ## use a weighted some of the probability distribution from the classifier and the predictor
+                                ## use a weighted sum of the probability distribution from the classifier and the predictor
                                 #print(np.asarray(previous_letter_prediction)np
-                                multiplied =np.multiply(np.asarray(previous_letter_prediction),probabilities.numpy())
+                                #multiplied =np.multiply(np.asarray(previous_letter_prediction),probabilities.numpy())
                                 predicted = np.argmax(weight * np.asarray(previous_letter_prediction) + (1-weight) * probabilities.numpy())
+
+                                #add prediction to list of letters predicted in current word
                                 letters_so_far.append(classes[predicted])
                                 #when a letter is wrong, the entire word is wrong
                                 #print(letters_so_far)
