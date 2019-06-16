@@ -145,10 +145,10 @@ if __name__ == '__main__':
         #look for matching labels
         if labels[0] == letter_label:
             x_grid = toplot[0].view(toplot[0].size()[0],1,toplot[0].size()[1],toplot[0].size()[2])
-            print(x_grid.size())
-            plt.imshow(torchvision.utils.make_grid(x_grid,nrow=16).detach().numpy()[0],cmap = 'gray')
+            #print(x_grid.size())
+            #plt.imshow(torchvision.utils.make_grid(x_grid,nrow=16).detach().numpy()[0],cmap = 'gray')
             #plt.colorbar(orientation='horizontal',pad=0.01,fraction=0.064)
-            plt.show()
+            #plt.show()
 
 
         weight = net.conv1.weight.data.numpy()

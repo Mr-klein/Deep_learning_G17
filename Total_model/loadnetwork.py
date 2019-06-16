@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon May 20 10:46:58 2019
 
-@author: RJ
-"""
+# Loads the classifier and uses the words from the 'google10000' dataset
+# to feed sequences of letters into the classifier
+# the Ngram probabilities are combined with the classifier probabilities
+# in order to create a final estimate of the sign letter
+
+# accuracy is calculated on the word-level
+# eg. if a letter in a word is wrong, the entire word is wrong
+
+# parameters to be adjusted:
+# minimum length: the minimum length of words to use from the text data set
+# prediction weight: how much weight the Ngram prediction has on the overall estimate (Ngram has 0 weight for initial estimate)
+
 import time
 from tqdm import tqdm
 import random
@@ -20,11 +28,16 @@ import pandas as pd
 from PIL import Image
 
 #%% define parameters
-param_path = 'model_weights_google.pth'     # path to model param
+param_path = 'weights/weightfs3lr1mo3.pth'     # path to model param
 test_path = 'SIGN/sign_mnist_test.csv'  # path to test csv
 
 N_classes = 26          # number of classes
 batch = 16               # batch size
+
+#probability parameters
+Use_Ngram = True
+minimum_length = 0    #minimum length of words to use
+
 
 #%% define dataloader
 class SIGN(torch.utils.data.Dataset):
@@ -60,6 +73,9 @@ classes = ('a', 'b', 'c', 'd',
            'q', 'r', 's', 't',
            'u', 'v', 'w', 'x',
            'y', 'z')
+fs = [48,96,144,192]
+fc1 = 120
+fc2 = 80
 
 #%% define neural network
 class Net(nn.Module):
@@ -67,25 +83,25 @@ class Net(nn.Module):
         super(Net, self).__init__()
         # Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0,
         #        dilation=1, groups=1, bias=True, padding_mode='zeros')
-        self.conv1 = nn.Conv2d(1, 12, 3, padding=1)
-        self.conv2 = nn.Conv2d(12, 24, 3, padding=1)
+        self.conv1 = nn.Conv2d(1, 48, 3, padding=1)
+        self.conv2 = nn.Conv2d(48, 96, 3, padding=1)
         # MaxPool2d(kernel_size, stride=None, padding=0, dilation=1,
         #           return_indices=False, ceil_mode=False)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv3 = nn.Conv2d(24,48, 3, padding=1)
-        self.conv4 = nn.Conv2d(48,96, 3, padding=1)
+        self.conv3 = nn.Conv2d(96,144, 3, padding=1)
+        self.conv4 = nn.Conv2d(144,192, 3, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
         # Linear(in_features, out_features, bias=True)
-        self.fc1 = nn.Linear(96 * 7 * 7, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, N_classes)
+        self.fc1 = nn.Linear(192 * 7 * 7, fc1)
+        self.fc2 = nn.Linear(fc1, fc2)
+        self.fc3 = nn.Linear(fc2, N_classes)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = self.pool(F.relu(self.conv2(x)))
         x = F.relu(self.conv3(x))
         x = self.pool(F.relu(self.conv4(x)))
-        x = x.view(-1, 96 * 7 * 7)
+        x = x.view(-1, 192 * 7 * 7)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -98,6 +114,8 @@ trigrams = np.load('savedNgram/trigrams.npy')
 unigrams = np.load('savedNgram/unigrams.npy')
 quadgrams = np.load('savedNgram/quadgrams.npy')
 
+#load confusion_matrix
+confusion = np.load('confusion_matrix.npy')
 #Load words to use for testing
 wordlist = np.load('processed_data/testwords.npy')
 images = []
@@ -109,7 +127,7 @@ if __name__ == '__main__':
         images.append(image)
         labels.append(label)
 
-
+    # load network
     use_gpu = torch.cuda.is_available()
     net = Net()
     device = torch.device("cpu")
@@ -131,21 +149,32 @@ if __name__ == '__main__':
     # loop over all words in the test dataset
     print('testing network on sequences ... ')
     with tqdm(total = len(wordlist)) as pbar:
-        for k,word in tqdm(enumerate(wordlist,0)):
+        for k,word in enumerate(wordlist,0):
+            if len(word)<minimum_length:
+                continue
             #update count with total number of words
             total_words += 1
-
             # initialize incorrect translation flag
             word_wrong = False
             # initialize list with current translated letters
             letters_so_far = []
-            for j,letter in enumerate(word,0):
-                letter_wrong = False
-                letters_total += 1
 
-                # if the letter is not the first letter, use the predicted letter from NGRAM
-                if j != 0:
-                    previous_letter_prediction = next_letter_prediction
+            #some parameters for probabilities
+            tree1 = []
+            tree2 = []
+            double_counter = 0
+
+            #determine whether its possible to predict two letters
+            for j,letter in enumerate(word,0):
+                letters_total += 1
+                if len(word)-j<2 and double_counter == 0:
+                    double_prediction = False
+                else:
+                    double_prediction = True
+
+                #double_prediction = False
+
+
 
                 #initialize label search flag (flag is true if program is looking for image with desired label)
                 labelsearch = True
@@ -163,52 +192,68 @@ if __name__ == '__main__':
                                 outputs = net(image.to(device))
                                 A = outputs.data.numpy()
 
-                                #obtain probabilities from output
-                                sm = torch.nn.Softmax(dim=1)
-                                probabilities = sm(outputs)
-                                #print(probabilities)
-                                probabilities = probabilities.squeeze()
+                                _, classified = torch.max(outputs.data, 1)
 
-                                #outputs = net(images)
+                                #get probability distribution from confusion matrix
+                                probabilities = confusion[:,classified]/100
+                                #probabilitiy of certain class
+                                P_evidence = predict([],unigrams,bigrams,trigrams,quadgrams,classes)
 
-                                _, predicted = torch.max(outputs.data, 1)
-                                # if it's the first letter, only rely on the classifier
-                                if j == 0:
-                                    weight = 0
-                                    previous_letter_prediction = probabilities
-                                if j == 1:
-                                    weight = 0.24
-                                if j == 2:
-                                    weight = 0.2
-                                if j >= 3:
-                                    weight = 0.45
+                                if double_prediction:
+                                    if (j+1)%2 != 0:
+                                        double_counter = 1
+                                        tree1 = np.multiply(probabilities,predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes))
+                                    elif (j+1)%2 == 0:
+                                        double_counter = 0
+                                        tree2=[]
+                                        for a,letter in enumerate(classes,0):
+                                            prob_predict = np.asarray(predict(letters_so_far+[letter],unigrams,bigrams,trigrams,quadgrams,classes))
+                                            total_prob = tree1[a]*np.multiply(probabilities,prob_predict)
+                                            for probability in total_prob:
+                                                tree2.append(probability)
 
-                                # predict the next letter based on current classification
-                                next_letter_prediction = predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)
-                                ## use a weighted sum of the probability distribution from the classifier and the predictor
-                                #print(np.asarray(previous_letter_prediction)np
-                                #multiplied =np.multiply(np.asarray(previous_letter_prediction),probabilities.numpy())
-                                predicted = np.argmax(weight * np.asarray(previous_letter_prediction) + (1-weight) * probabilities.numpy())
+                                        tree2_index = np.argmax(tree2)
+                                        #print(tree2_index)
+                                        letter1 = int(tree2_index/26)
+                                        #print(letter1)
+                                        #print(len(tree2))
+                                        letter2 = tree2_index%26
+                                        #print(letters_so_far)
+                                        letters_so_far.append(classes[letter1])
+                                        letters_so_far.append(classes[letter2])
 
-                                #add prediction to list of letters predicted in current word
-                                letters_so_far.append(classes[predicted])
-                                #when a letter is wrong, the entire word is wrong
-                                #print(letters_so_far)
-                                if predicted != label:
-                                    #print(probabilities)
-                                    #print(label)
-
+                                # translate single letter
+                                if double_prediction == False:
+                                    #plt.plot(probabilities)
+                                    final_prob = np.multiply(probabilities,predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes))
+                                    #print(final_prob)
+                                    #time.sleep(1)
+                                    #final_prob = weight * np.asarray(predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)) + (1-weight) * probabilities
+                                    final_prob_index = np.argmax(final_prob)
+                                    if Use_Ngram == False:
+                                        final_prob_index = classified
+                                    letters_so_far.append(classes[final_prob_index])
+                                    #plt.plot(final_prob)
                                     #plt.show()
-                                    word_wrong = True
-                                    letter_wrong = True
+
+
+                                #check if word has been correctly translated
+                                if j == len(word)-1:
+                                    #print(letters_so_far)
+                                    for b,predicted_letter in enumerate(letters_so_far,0):
+                                        if predicted_letter != word[b]:
+                                            word_wrong = True
+                                        elif predicted_letter == word[b]:
+                                            letters_correct += 1
+
                                 labelsearch = False
                                 break
 
 
-                if letter_wrong == False:
-                    letters_correct += 1
             if word_wrong == False:
                 words_correct += 1
             pbar.update(1)
     print('Done')
-    print('The accuracy of the network on sequences is ' + str((words_correct/total_words)*100))
+    print('The accuracy of the network on sequences on the word level is ' + str((words_correct/total_words)*100))
+
+    print('The accuracy of the network on sequences on the letter level is ' + str((letters_correct/letters_total)*100))
