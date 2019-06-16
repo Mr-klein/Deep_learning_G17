@@ -26,7 +26,7 @@ fc2 = 80
 Lr = [0.01, 0.005, 0.001]
 Momentum = [0.8, 0.85, 0.9, 0.95]
 
-N_classes = 26          # number of classes
+nclasses = 26          # number of classes
 batch = 8               # batch size
 
 #%% define dataloader
@@ -96,11 +96,13 @@ class Net(nn.Module):
     
 #%% testing network
 if __name__ == '__main__':
+    nnetwork = 4 * 3 * 4
     for l in range(4):
         for k in range(3):
             for j in range(4):
+                cnetwork = (l+1) * (k+1) * (j+1)
                 param_path = 'weights/weightfs%slr%smo%s.pth' % (j,k,l) # path to param file
-                result_path = 'results/resultfs%slr%smo%s.pth' % (j,k,l) # path to result file
+                result_path = 'results/resultfs%slr%smo%s.txt' % (j,k,l) # path to result file
 
                 fs1 = fs[j][0]
                 fs2 = fs[j][1]
@@ -116,7 +118,7 @@ if __name__ == '__main__':
             #    net.load_state_dict(torch.load(param_path,map_location='cpu'))
                 net.eval()
     
-                print('Start testing for filterset:',j,'learning rate:',Lr[k], 'momentum:',Momentum[l])
+                print('Start testing for (',cnetwork,'/',nnetwork,') filterset:',j,'learning rate:',Lr[k], 'momentum:',Momentum[l])
                 correct = 0
                 total = 0
                 with torch.no_grad():
@@ -126,14 +128,14 @@ if __name__ == '__main__':
                         _, predicted = torch.max(outputs.data, 1)
                         total += labels.size(0)
                         correct += (predicted == labels.to(device)).sum().item()
-                        result_file = open(result_path,"a")
-                        result_file.write(repr(100 * correct / total)+ '\n')
-                        result_file.close()
-                        print('Accuracy of the network on the test images: %d %%' % (100 * correct / total))
+                result_file = open(result_path,"a")
+                result_file.write(repr(100 * correct / total)+ '\n')
+                result_file.close()
+                print('Accuracy of the network on the test images: %d %%' % (100 * correct / total))
     
                 print('Start testing per class')
-                class_correct = list(0. for i in range(N_classes))
-                class_total = list(0. for i in range(N_classes))
+                class_correct = list(0. for i in range(nclasses))
+                class_total = list(0. for i in range(nclasses))
                 with torch.no_grad():
                     for data in testloader:
                         images, labels = data
@@ -145,7 +147,7 @@ if __name__ == '__main__':
                             class_correct[label] += c[i].item()
                             class_total[label] += 1
                 
-                for i in range(N_classes):
+                for i in range(nclasses):
                     if i == 9 or i == 25:   # skip J and Z since they are not included
                         pass
                     else:
