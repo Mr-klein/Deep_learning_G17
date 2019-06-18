@@ -11,7 +11,10 @@
 
 # parameters to be adjusted:
 # minimum length: the minimum length of words to use from the text data set
-# prediction weight: how much weight the Ngram prediction has on the overall estimate (Ngram has 0 weight for initial estimate)
+# Use_Ngram: True or false. wheter to use Ngrams when translating the sequence
+
+#Notes: -- The confusion matrix needs to be generated before usage
+    #   -- The text dataset needs to be preprocessed to remove words with J and Z
 
 import time
 from tqdm import tqdm
@@ -35,11 +38,10 @@ N_classes = 26          # number of classes
 batch = 16               # batch size
 
 #probability parameters
-Use_Ngram = True
-minimum_length = 0    #minimum length of words to use
+Use_Ngram = False
+minimum_length = 0   #minimum length of words to "translate"
 
-
-#%% define dataloader
+# define dataloader
 class SIGN(torch.utils.data.Dataset):
     def __init__(self,csv_file,height,width, transforms=None):
         self.data = pd.read_csv(csv_file)
@@ -81,17 +83,12 @@ fc2 = 80
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        # Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0,
-        #        dilation=1, groups=1, bias=True, padding_mode='zeros')
         self.conv1 = nn.Conv2d(1, 48, 3, padding=1)
         self.conv2 = nn.Conv2d(48, 96, 3, padding=1)
-        # MaxPool2d(kernel_size, stride=None, padding=0, dilation=1,
-        #           return_indices=False, ceil_mode=False)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv3 = nn.Conv2d(96,144, 3, padding=1)
         self.conv4 = nn.Conv2d(144,192, 3, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
-        # Linear(in_features, out_features, bias=True)
         self.fc1 = nn.Linear(192 * 7 * 7, fc1)
         self.fc2 = nn.Linear(fc1, fc2)
         self.fc3 = nn.Linear(fc2, N_classes)
@@ -116,11 +113,15 @@ quadgrams = np.load('savedNgram/quadgrams.npy')
 
 #load confusion_matrix
 confusion = np.load('confusion_matrix.npy')
+P_evidence = predict([],unigrams,bigrams,trigrams,quadgrams,classes)
+P_evidence[9] = 1
+P_evidence[25] = 1
 #Load words to use for testing
 wordlist = np.load('processed_data/testwords.npy')
 images = []
 labels = []
 if __name__ == '__main__':
+
     #create list with images and labels for indexing
     for data in testloader:
         image, label = data
@@ -141,19 +142,21 @@ if __name__ == '__main__':
     #%% testing network
 
     # initializing performance parameters
-    total_words = 0
+    words_total = 0
     words_correct = 0
     letters_correct = 0
     letters_total = 0
 
-    # loop over all words in the test dataset
+    # loop over all words in the test data-set (text)
     print('testing network on sequences ... ')
     with tqdm(total = len(wordlist)) as pbar:
         for k,word in enumerate(wordlist,0):
+            start = time.time()
+            # if word length is less then the minimum length, try next word
             if len(word)<minimum_length:
                 continue
             #update count with total number of words
-            total_words += 1
+            words_total += 1
             # initialize incorrect translation flag
             word_wrong = False
             # initialize list with current translated letters
@@ -171,10 +174,8 @@ if __name__ == '__main__':
                     double_prediction = False
                 else:
                     double_prediction = True
-
-                #double_prediction = False
-
-
+                if Use_Ngram == False:
+                    double_prediction = False
 
                 #initialize label search flag (flag is true if program is looking for image with desired label)
                 labelsearch = True
@@ -184,22 +185,21 @@ if __name__ == '__main__':
                         # select a random batch from the dataset
                         batchtouse = random.randint(0,448)
                         for i,label in enumerate(labels[batchtouse],0):
-
                             # find desired image in chosen batch
                             if label == classes.index(letter):
+
+                                start_genoutput = time.time()
                                 image = images[batchtouse][i]
                                 image = image.view(1,1,28,28)
+                                end_genoutput = time.time()
                                 outputs = net(image.to(device))
-                                A = outputs.data.numpy()
-
                                 _, classified = torch.max(outputs.data, 1)
-
                                 #get probability distribution from confusion matrix
                                 probabilities = confusion[:,classified]/100
                                 #probabilitiy of certain class
-                                P_evidence = predict([],unigrams,bigrams,trigrams,quadgrams,classes)
 
                                 if double_prediction:
+                                    double_pred_start = time.time()
                                     if (j+1)%2 != 0:
                                         double_counter = 1
                                         tree1 = np.multiply(probabilities,predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes))
@@ -213,14 +213,12 @@ if __name__ == '__main__':
                                                 tree2.append(probability)
 
                                         tree2_index = np.argmax(tree2)
-                                        #print(tree2_index)
                                         letter1 = int(tree2_index/26)
-                                        #print(letter1)
-                                        #print(len(tree2))
                                         letter2 = tree2_index%26
-                                        #print(letters_so_far)
+
                                         letters_so_far.append(classes[letter1])
                                         letters_so_far.append(classes[letter2])
+                                        double_pred_end = time.time()
 
                                 # translate single letter
                                 if double_prediction == False:
@@ -253,7 +251,11 @@ if __name__ == '__main__':
             if word_wrong == False:
                 words_correct += 1
             pbar.update(1)
+            end = time.time()
+            #print('double prediction duration is ' + str((double_pred_end-double_pred_start)*100/(end - start)) + 'percent of loop')
+            #print('output generation duration is ' + str((end_genoutput-start_genoutput)*100/(end - start)) + 'percent of loop')
+
     print('Done')
-    print('The accuracy of the network on sequences on the word level is ' + str((words_correct/total_words)*100))
+    print('The accuracy of the network on sequences on the word level is ' + str((words_correct/words_total)*100))
 
     print('The accuracy of the network on sequences on the letter level is ' + str((letters_correct/letters_total)*100))
