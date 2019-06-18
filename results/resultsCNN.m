@@ -16,4 +16,3 @@ for k = 1:size(mo,2)
         end
     end
 end
-
