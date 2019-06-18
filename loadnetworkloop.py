@@ -18,14 +18,16 @@ from PIL import Image
 #%% define parameters
 test_path = 'SIGN/sign_mnist_test.csv'  # path to test csv
 
-fs = [[6,12,18,24],[12,24,36,48],[24,48,72,96],[48,96,144,192]]
+# fs = [[6,12,18,24],[12,24,36,48],[24,48,72,96],[48,96,144,192]]
+fs = [[96,192,288,384]]
 fc1 = 120
 fc2 = 80
 
 # only for print feedback
-Lr = [0.01, 0.005, 0.001]
-Momentum = [0.8, 0.85, 0.9, 0.95]
-
+# Lr = [0.01, 0.005, 0.001]
+# Momentum = [0.8, 0.85, 0.9, 0.95]
+Lr = [0.005]
+Momentum = [0.95]
 nclasses = 26          # number of classes
 batch = 8               # batch size
 
@@ -101,8 +103,8 @@ if __name__ == '__main__':
         for k in range(3):
             for j in range(4):
                 cnetwork = (l+1) * (k+1) * (j+1)
-                param_path = 'weights/weightfs%slr%smo%s.pth' % (j,k,l) # path to param file
-                result_path = 'results/resultfs%slr%smo%s.txt' % (j,k,l) # path to result file
+                param_path = 'weights/weightfs%slr%smo%sextended.pth' % (j,k,l) # path to param file
+                result_path = 'results/resultfs%slr%smo%sextended.txt' % (j,k,l) # path to result file
 
                 fs1 = fs[j][0]
                 fs2 = fs[j][1]
