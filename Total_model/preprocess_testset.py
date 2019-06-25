@@ -1,3 +1,5 @@
+
+#preprocesses the data-set used to test the model
 import numpy as np
 
 

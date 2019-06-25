@@ -86,16 +86,16 @@ def predict(first_letters,unigrams,bigrams,trigrams,quadgrams,letters):
     return possible_predictions
 
 
-a= predict(first_letters,unigrams,bigrams,trigrams,quadgrams,letters)
-plt.plot(a)
-plt.title('Trigram predition example for sequence "AN"')
-plt.ylabel('Probability')
-plt.xlabel('Letter')
-plt.xticks(np.arange(0, 26), ['A', 'B', 'C', 'D',
+#a= predict(first_letters,unigrams,bigrams,trigrams,quadgrams,letters)
+#plt.plot(a)
+#plt.title('Trigram predition example for sequence "AN"')
+#plt.ylabel('Probability')
+#plt.xlabel('Letter')
+#plt.xticks(np.arange(0, 26), ['A', 'B', 'C', 'D',
             'E', 'F', 'G', 'H', 'I',
              'J','K','L','M','N','O',
              'P','Q','R','S','T','U','V','W','X','Y','Z'])
-plt.show()
+#plt.show()
 #a= np.asscalar(np.asarray(a))
 
 #predicted_letter = letters[a]
