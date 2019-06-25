@@ -48,25 +48,25 @@ teststdn = std(testbinn);             % normalized standard deviation
 %% plot
 % train set
 figure(1); clf(1);
-bar(0:1:25,trainbinn,'b'); hold on
-plot(xlim,[trainmeann trainmeann], 'r--')
-plot(xlim,[trainstdn trainstdn], 'g--')
+bar(0:1:25,trainbinn*100,'b'); hold on
+plot(xlim,[trainmeann trainmeann]*100, 'r--')
+plot(xlim,[trainstdn trainstdn]*100, 'g--')
 set(gca,'xtick',[0:25],'xticklabel',strainlabels,'FontSize',15)
 title(['Training set distribution of ',num2str(size(trainlabels,1)),' samples in descending order'])
 xlabel('Letters in descending order')
 ylabel('Occurrences of letters [%]')
-legend('data distribution',['data mean = ',num2str(trainmeann)],['data std = ',num2str(trainstdn)])
+legend('data distribution',['data mean = ',num2str(trainmeann*100)],['data std = ',num2str(trainstdn*100)])
 
 % test set
 figure(2); clf(2);
-bar(0:1:25,testbinn,'b'); hold on
-plot(xlim,[testmeann testmeann], 'r--')
-plot(xlim,[teststdn teststdn], 'g--')
+bar(0:1:25,testbinn*100,'b'); hold on
+plot(xlim,[testmeann testmeann]*100, 'r--')
+plot(xlim,[teststdn teststdn]*100, 'g--')
 set(gca,'xtick',[0:25],'xticklabel',stestlabels,'FontSize',15)
 title(['Test set distribution of ',num2str(size(testlabels,1)),' samples in descending order'])
 xlabel('Letters in descending order')
 ylabel('Occurrences of letters [%]')
-legend('data distribution',['data mean = ',num2str(testmeann)],['data std = ',num2str(teststdn)])
+legend('data distribution',['data mean = ',num2str(testmeann*100)],['data std = ',num2str(teststdn*100)])
 
 %% FUNCTIONS
 % retrieve data from csv files
