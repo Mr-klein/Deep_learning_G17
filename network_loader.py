@@ -89,8 +89,8 @@ if __name__ == '__main__':
     fs4 = fs[3]
     
     # define where weights and loss files need to be loaded
-    param_path = 'weights/optimal_network.pth'
-    result_path = 'results/optimal_network.txt'
+    param_path = 'network_weights.pth'
+    result_path = 'network_results.txt'
     
     # check for graphics card availability
     use_gpu = torch.cuda.is_available()

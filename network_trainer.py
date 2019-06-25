@@ -99,8 +99,8 @@ if __name__ == '__main__':
     moment = Momentum
 
     # define where weights and loss needs to be saved
-    weight_path = 'weights/optimal_network.pth'
-    loss_path = 'loss/optimal_network.txt'
+    weight_path = 'network_weights.pth'
+    loss_path = 'network_loss.txt'
 
     # check for graphics card availability
     use_gpu = torch.cuda.is_available()
