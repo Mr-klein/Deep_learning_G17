@@ -25,6 +25,7 @@ plt.yticks(np.arange(0, 26), ['A', 'B', 'C', 'D',
 
 plt.ylabel('True label')
 plt.xlabel('Predicted label')
+plt.title('Classifier confusion matrix')
 plt.imshow(confusion,cmap='PuBu',vmin=0., vmax=100.)
 plt.Normalize(vmin=0.,vmax=100.)
 plt.colorbar(pad=0.01).ax.set_title('prediction %')

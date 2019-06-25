@@ -1,5 +1,8 @@
 #processes the text file such that each word is on a seperate line
+#characters our of alphabet are also removed
 
+
+corpuspath = 'data/brown.txt'
 import numpy as np
 seperator = ''
 allowed = ['a', 'b', 'c', 'd',
@@ -17,7 +20,7 @@ allowed = ['a', 'b', 'c', 'd',
 corpuslist = []
 ""
 print("processing corpus...")
-with open('data/brown.txt','r') as f:
+with open('corpuspath','r') as f:
     for line in f:
         for word in line.split():
             wordnew = []
