@@ -11,12 +11,12 @@ import logging
 from collections import Counter
 from os.path import basename
 
-# keith
 #How to use
+# Default configuration:
 # ngramModelTrainer_penta.py --input_corpus '../processed_data/processed_corpus.txt' --compute_tetragrams
 
 
-# google10000 is the list of words to use. any list can be used
+# processed_corpus is the list of words to use. any list can be used
 # the default alphabet is a to z
 # compute tetragrams computes 4-gram. takes a long time with large datasets
 

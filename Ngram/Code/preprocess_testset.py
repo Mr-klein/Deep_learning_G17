@@ -3,7 +3,7 @@
 import numpy as np
 
 
-# remove words with letters j and z and shorten list
+# remove words with letters j and z 
 alphawords = '../data/google10000.txt'
 words = [line.rstrip('\n') for line in open(alphawords)]
 i = 0
