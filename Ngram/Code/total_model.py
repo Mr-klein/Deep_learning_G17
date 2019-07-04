@@ -106,15 +106,15 @@ class Net(nn.Module):
 
 
 #load Ngrams
-bigrams = np.load('savedNgram/bigrams.npy')
-trigrams = np.load('savedNgram/trigrams.npy')
-unigrams = np.load('savedNgram/unigrams.npy')
-quadgrams = np.load('savedNgram/quadgrams.npy')
+bigrams = np.load('../savedNgram/bigrams.npy')
+trigrams = np.load('../savedNgram/trigrams.npy')
+unigrams = np.load('../savedNgram/unigrams.npy')
+quadgrams = np.load('../savedNgram/quadgrams.npy')
 
 #load confusion_matrix
-confusion = np.load('confusion_matrix.npy')
+confusion = np.load('../../cnn/code/confusion_matrix.npy')
 #Load words to use for testing
-wordlist = np.load('processed_data/testwords.npy')
+wordlist = np.load('../processed_data/testwords.npy')
 images = []
 labels = []
 if __name__ == '__main__':
@@ -205,13 +205,13 @@ if __name__ == '__main__':
                                                    'E', 'F', 'G', 'H', 'I',
                                                     'J','K','L','M','N','O',
                                                     'P','Q','R','S','T','U','V','W','X','Y','Z'])
-                                            print(letters_so_far)
-                                            plt.plot(predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)/max(predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)))
-                                            plt.plot(probabilities/max(probabilities))
-                                            plt.plot(tree1/(max(tree1)))
-                                            plt.title('Ngram prediction correction')
-                                            plt.legend(['Ngram estimate', 'Classifier estimate', 'Final estimate'])
-                                            plt.show()
+                                            #print(letters_so_far)
+                                            #plt.plot(predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)/max(predict(letters_so_far,unigrams,bigrams,trigrams,quadgrams,classes)))
+                                            #plt.plot(probabilities/max(probabilities))
+                                            #plt.plot(tree1/(max(tree1)))
+                                            #plt.title('Ngram prediction correction')
+                                            #plt.legend(['Ngram estimate', 'Classifier estimate', 'Final estimate'])
+                                            #plt.show()
                                     elif (j+1)%2 == 0:
                                         double_counter = 0
                                         tree2=[]
@@ -224,7 +224,7 @@ if __name__ == '__main__':
                                         tree2_index = np.argmax(tree2)
                                         letter1 = int(tree2_index/26)
                                         letter2 = tree2_index%26
-                                        print(letter1)
+                                        #print(letter1)
                                         letters_so_far.append(classes[letter1])
                                         letters_so_far.append(classes[letter2])
                                         double_pred_end = time.time()
