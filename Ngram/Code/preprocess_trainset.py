@@ -26,17 +26,20 @@ with open('corpuspath','r') as f:
             wordnew = []
             wordnewstring = ""
             for i,letter in enumerate(word,0):
-                prohibited_symbol = True
+                prohibited_symbol = True  #assume symbol is prohibited
+                # check if symbol is in list of allowed symbols
                 for symbol in allowed:
                     if symbol == letter:
                         prohibited_symbol = False
+                # skip symbol if not allowed
                 if prohibited_symbol == True:
                     pass
+                # append symbol to current word if allowed
                 else:
                     wordnew.append(letter)
             corpuslist.append(wordnewstring.join(wordnew))
 corpuslist_lower = [word.lower() for word in corpuslist]
-processed_corpus = open("processed_data/processed_corpus.txt", "w")
+processed_corpus = open("../processed_data/processed_corpus.txt", "w")
 for line in corpuslist_lower:
     if len(line) > 0:
         processed_corpus.write(line)
