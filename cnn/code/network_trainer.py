@@ -107,7 +107,7 @@ if __name__ == '__main__':
     net = Net()
     if use_gpu:
         net = net.cuda()
-    
+
     # define loss function, backwards pass, and learning rate scheduler
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=learnrate, momentum=moment)
