@@ -15,7 +15,7 @@ from PIL import Image
 from torch.optim.lr_scheduler import StepLR
 
 #%% define parameters
-train_path = 'SIGN/sign_mnist_train.csv'  #Path to training csv
+train_path = '../../SIGN/sign_mnist_train.csv'  #Path to training csv
 
 # apparently it seems to work to double the number of filters
 # this comes from experience, there is no set rule for that

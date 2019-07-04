@@ -4,11 +4,11 @@ close all
 
 %% get data
 % train set
-trainfilename = 'SIGN/sign_mnist_train.csv';
+trainfilename = '../../SIGN/sign_mnist_train.csv';
 traindata = getData(trainfilename);
 
 % test set
-testfilename = 'SIGN/sign_mnist_test.csv';
+testfilename = '../../SIGN/sign_mnist_test.csv';
 testdata = getData(testfilename);
 
 % labels

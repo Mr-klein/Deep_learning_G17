@@ -12,7 +12,7 @@ import pandas as pd
 from PIL import Image
 
 #%% define parameters
-test_path = 'SIGN/sign_mnist_test.csv'  # path to test csv
+test_path = '../../SIGN/sign_mnist_test.csv'  # path to test csv
 
 # init number of filters
 fs = [[6,12,18,24],[12,24,36,48],[24,48,72,96],[48,96,144,192]]

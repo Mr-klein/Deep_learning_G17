@@ -11,7 +11,7 @@ results = [];
 for k = 1:size(mo,2)
     for j = 1:size(lr,2)
         for i = 1:size(fs,2)
-            filename = "results/resultfs"+fs(i)+"lr"+lr(j)+"mo"+mo(k)+".txt";
+            filename = "../results/network_optimizer_results/resultfs"+fs(i)+"lr"+lr(j)+"mo"+mo(k)+".txt";
             results = [results, [i;j;k;textread(filename)]];
         end
     end

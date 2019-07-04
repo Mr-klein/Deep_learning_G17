@@ -3,7 +3,7 @@ clear all
 close all
 
 %% obtain data
-filename = 'network_loss.txt';
+filename = '../loss/network_loss.txt';
 fileID = fopen(filename,'r');
 formatSpec = '%f';
 loss = (fscanf(fileID,formatSpec));
