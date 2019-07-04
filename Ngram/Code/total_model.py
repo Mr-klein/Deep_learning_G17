@@ -31,7 +31,7 @@ import pandas as pd
 from PIL import Image
 
 #%% define parameters
-param_path = '../weights/weightfs3lr1mo3.pth'     # path to model param
+param_path = '../../cnn/weights/weightfs3lr1mo3.pth'     # path to model param
 test_path = '../../SIGN/sign_mnist_test.csv'  # path to test csv
 
 N_classes = 26          # number of classes
