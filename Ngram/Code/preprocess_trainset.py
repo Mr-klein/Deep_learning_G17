@@ -1,5 +1,5 @@
 #processes the text file such that each word is on a seperate line
-#characters our of alphabet are also removed
+#characters out of alphabet are also removed
 
 
 corpuspath = '../data/brown.txt'
