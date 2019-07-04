@@ -141,8 +141,8 @@ if __name__ == '__main__':
 
 
         # ----- PARAMETER FOR PLOTTING
-        toplot = x1_activation  #Convolutional activation to plot
-        letter_label = 4      # letter to plot activation for
+        toplot = x1  #Convolutional activation to plot
+        letter_label = 23      # letter to plot activation for
         #look for matching labels
         if labels[0] == letter_label:
             x_grid = toplot[0].view(toplot[0].size()[0],1,toplot[0].size()[1],toplot[0].size()[2])
