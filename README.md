@@ -16,6 +16,7 @@ Not strictly required since preprocessing has already been done
 3. `ngramModelTrainer.py`
 
 Testing model
+
 4. `total_model.py`
 
 Instructions for running for each file are found as comments at the start of the respective file.
